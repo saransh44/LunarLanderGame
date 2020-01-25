@@ -26,6 +26,7 @@ ShaderProgram textured;
 glm::mat4 viewMatrix, modelMatrix, projectionMatrix;
 
 GLuint textID;
+GLuint tileID;
 
 ShaderProgram unTextured;
 
@@ -36,6 +37,9 @@ struct GameState {
     //add something more to make GameState struct more unique if need be
 };
 
+Entity lander;
+Entity platforms[PLATFORM_COUNT];
+bool ended = false;
 GameState state;
 
 GLuint LoadTexture(const char* filePath) {
@@ -103,6 +107,12 @@ void DrawText(ShaderProgram* program, GLuint fontTextureID, std::string text, fl
     glDisableVertexAttribArray(program->texCoordAttribute);
 }
 
+int ID = 0;
+//borders
+float bottom_x = -5;
+float left_y = -2.25;
+float right_y = -2.25;
+
 void Initialize() {
     SDL_Init(SDL_INIT_VIDEO);
     displayWindow = SDL_CreateWindow("Lunar Lander", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL);
@@ -132,13 +142,38 @@ void Initialize() {
 
     textured.Load("shaders/vertex_textured.glsl", "shaders/fragment_textured.glsl");
     textID = LoadTexture("font1.png");
+    tileID = LoadTexture("tile.png");
+
+
+    //bottom border
+    while (bottom_x <= 5) {
+        platforms[ID].textureID = tileID;
+        platforms[ID].position = glm::vec3(bottom_x, -3.25f, 0);
+        ID++;
+        bottom_x += 1;
+    }
+
+    //left border
+    while (left_y <= 3.75) {
+        platforms[ID].textureID = tileID;
+        platforms[ID].position = glm::vec3(-5, left_y, 0);
+        ID++;
+        left_y += 1;
+    }
+
+    //right border
+    while (right_y <= 3.75) {
+        platforms[ID].textureID = tileID;
+        platforms[ID].position = glm::vec3(5, right_y, 0);
+        ID++;
+        right_y += 1;
+    }
 
     textured.SetProjectionMatrix(projectionMatrix);
     textured.SetViewMatrix(viewMatrix);
     textured.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 
     glUseProgram(textured.programID);
-
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -172,10 +207,13 @@ void Update() {
     accumulator = deltaTime;
 
 }
+glm::vec3 tileSizing = glm::vec3(1.0f, 1.0f, 1.0f);
 
 void Render() {
     glClear(GL_COLOR_BUFFER_BIT);
-
+    for (int i = 0; i < PLATFORM_COUNT; i++) {
+        platforms[i].Render(&textured, tileSizing);
+    }
 
     SDL_GL_SwapWindow(displayWindow);
 }

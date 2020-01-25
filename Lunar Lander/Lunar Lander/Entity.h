@@ -17,6 +17,8 @@ enum EntityType { PLAYER, PLATFORM, COIN, ENEMY };
 class Entity {
 public:
     EntityType entityType;
+    GLuint textureID;
+
     bool isStatic;
     bool isActive;
 
