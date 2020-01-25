@@ -30,17 +30,9 @@ GLuint tileID;
 
 ShaderProgram unTextured;
 
-struct GameState {
-    Entity lander;
-    Entity platforms[PLATFORM_COUNT];
-    bool ended = false;
-    //add something more to make GameState struct more unique if need be
-};
-
 Entity lander;
 Entity platforms[PLATFORM_COUNT];
 bool ended = false;
-GameState state;
 
 GLuint LoadTexture(const char* filePath) {
     int w, h, n;
@@ -107,11 +99,11 @@ void DrawText(ShaderProgram* program, GLuint fontTextureID, std::string text, fl
     glDisableVertexAttribArray(program->texCoordAttribute);
 }
 
-int ID = 0;
+int platformCount = 0;
 //borders
-float bottom_x = -5;
-float left_y = -2.25;
-float right_y = -2.25;
+float bottomBorder;
+float leftBorder;
+float rightBorder;
 
 void Initialize() {
     SDL_Init(SDL_INIT_VIDEO);
@@ -145,28 +137,26 @@ void Initialize() {
     tileID = LoadTexture("tile.png");
 
 
-    //bottom border
-    while (bottom_x <= 5) {
-        platforms[ID].textureID = tileID;
-        platforms[ID].position = glm::vec3(bottom_x, -3.25f, 0);
-        ID++;
-        bottom_x += 1;
+    //bottomBorder border
+
+    for (bottomBorder = -5; bottomBorder <= 5; bottomBorder++) {
+        platforms[platformCount].textureID = tileID;
+        platforms[platformCount].position = glm::vec3(bottomBorder, -3.25f, 0);
+        platformCount++;
     }
 
     //left border
-    while (left_y <= 3.75) {
-        platforms[ID].textureID = tileID;
-        platforms[ID].position = glm::vec3(-5, left_y, 0);
-        ID++;
-        left_y += 1;
+    for (leftBorder = -2.25; leftBorder <= 3.75; leftBorder++) {
+        platforms[platformCount].textureID = tileID;
+        platforms[platformCount].position = glm::vec3(-5, leftBorder, 0);
+        platformCount++;
     }
 
     //right border
-    while (right_y <= 3.75) {
-        platforms[ID].textureID = tileID;
-        platforms[ID].position = glm::vec3(5, right_y, 0);
-        ID++;
-        right_y += 1;
+    for (rightBorder = -2.25; rightBorder <= 3.75; rightBorder++) {
+        platforms[platformCount].textureID = tileID;
+        platforms[platformCount].position = glm::vec3(5, rightBorder, 0);
+        platformCount++;
     }
 
     textured.SetProjectionMatrix(projectionMatrix);
@@ -199,7 +189,7 @@ void Update() {
 
     while (deltaTime >= FIXED_TIMESTEP) {
         // Update. Notice it's FIXED_TIMESTEP. Not deltaTime
-        state.lander.Update(FIXED_TIMESTEP, state.platforms, PLATFORM_COUNT);
+        lander.Update(FIXED_TIMESTEP, platforms, PLATFORM_COUNT);
 
         deltaTime -= FIXED_TIMESTEP;
     }
@@ -211,7 +201,7 @@ glm::vec3 tileSizing = glm::vec3(1.0f, 1.0f, 1.0f);
 
 void Render() {
     glClear(GL_COLOR_BUFFER_BIT);
-    for (int i = 0; i < PLATFORM_COUNT; i++) {
+    for (int i = 0; i < platformCount; i++) {
         platforms[i].Render(&textured, tileSizing);
     }
 

@@ -1,4 +1,4 @@
 ﻿  main.cpp
-D:\Document\GitHub\LunarLanderGame\Lunar Lander\Lunar Lander\main.cpp(74,23): warning C4018: '<': signed/unsigned mismatch
-D:\Document\GitHub\LunarLanderGame\Lunar Lander\Lunar Lander\main.cpp(104,51): warning C4244: 'argument': conversion from 'float' to 'GLsizei', possible loss of data
+D:\Document\GitHub\LunarLanderGame\Lunar Lander\Lunar Lander\main.cpp(66,23): warning C4018: '<': signed/unsigned mismatch
+D:\Document\GitHub\LunarLanderGame\Lunar Lander\Lunar Lander\main.cpp(96,51): warning C4244: 'argument': conversion from 'float' to 'GLsizei', possible loss of data
   Lunar Lander.vcxproj -> D:\Document\GitHub\LunarLanderGame\Lunar Lander\Debug\Lunar Lander.exe
