@@ -12,7 +12,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "ShaderProgram.h"
 
-enum EntityType { PLAYER, PLATFORM, COIN, ENEMY };
+enum EntityType { PLAYER, TILE, COIN, MESSAGE};
 
 class Entity {
 public:
@@ -22,10 +22,10 @@ public:
     bool isStatic;
     bool isActive;
 
-    bool collidedTop;
-    bool collidedBottom;
-    bool collidedLeft;
-    bool collidedRight;
+    //these are the only real additions by me not provided in the slides nor in my past edits to Entity from the pong project
+    bool winnerWinnerChickenDinner = false;
+    bool collisionDetected = false;
+    bool boostUsed;
 
     float width;
     float height;
@@ -36,6 +36,7 @@ public:
     glm::vec3 acceleration;
         
     Entity();
+    Entity(EntityType type);
 
     bool CheckCollision(Entity other);
 

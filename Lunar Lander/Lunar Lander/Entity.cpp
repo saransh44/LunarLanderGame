@@ -2,7 +2,18 @@
 
 Entity::Entity()
 {
-    entityType = PLATFORM;
+    entityType = PLAYER;
+    isStatic = true;
+    isActive = true;
+    position = glm::vec3(0);
+    speed = 0;
+    width = 1;
+    height = 1;
+    boostUsed = false;
+}
+
+Entity::Entity(EntityType type) {
+    entityType = type;
     isStatic = true;
     isActive = true;
     position = glm::vec3(0);
@@ -10,6 +21,7 @@ Entity::Entity()
     width = 1;
     height = 1;
 }
+
 void Entity::UpdatePos(const float incrementX, const float incrementY)
 {
     position.x += incrementX;
@@ -47,6 +59,14 @@ bool Entity::CheckCollision(Entity other)
     float ydist = fabs(position.y - other.position.y) - ((height + other.height) / 2.0f);
     if (xdist < 0 && ydist < 0)
     {
+        //Win/lose boolean tracking block of code
+        collisionDetected = true;
+        if (other.entityType == COIN) {
+            winnerWinnerChickenDinner = true;
+        }
+        else if (other.entityType == TILE) {
+            winnerWinnerChickenDinner = false;
+        }
         return true;
     }
     return false;
@@ -62,12 +82,10 @@ void Entity::CheckCollisionsY(Entity* objects, int objectCount)
             float ydist = fabs(position.y - object.position.y);
             float penetrationY = fabs(ydist - (height / 2) - (object.height / 2));
             if (velocity.y > 0) {
-                collidedTop = true; //need to actually record the collision side
                 position.y -= penetrationY;
                 velocity.y = 0;
             }
             else if (velocity.y < 0) {
-                collidedBottom = true;
                 position.y += penetrationY;
                 velocity.y = 0;
             }
@@ -85,12 +103,10 @@ void Entity::CheckCollisionsX(Entity* objects, int objectCount)
             float xdist = fabs(position.x - object.position.x);
             float penetrationX = fabs(xdist - (width / 2) - (object.width / 2));
             if (velocity.x > 0) {
-                collidedRight = true; //need to actually record the collision side
                 position.x -= penetrationX;
                 velocity.x = 0;
             }
             else if (velocity.x < 0) {
-                collidedLeft = true; //need to actually record the collision side
                 position.x += penetrationX;
                 velocity.x = 0;
             }

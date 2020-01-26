@@ -1,5 +1,5 @@
 #define GL_SILENCE_DEPRECATION //For silencing pesky notifications on Mac
-#define PLATFORM_COUNT 30
+#define TILE_COUNT 34
 
 #ifdef _WINDOWS
 #include <GL/glew.h>
@@ -17,8 +17,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#include <ctime> 
-
 SDL_Window* displayWindow;
 bool gameIsRunning = true;
 
@@ -27,12 +25,18 @@ glm::mat4 viewMatrix, modelMatrix, projectionMatrix;
 
 GLuint textID;
 GLuint tileID;
+GLuint pikachuID; 
+GLuint pokeballID;
 
 ShaderProgram unTextured;
 
-Entity lander;
-Entity platforms[PLATFORM_COUNT];
+Entity tiles[TILE_COUNT];
+Entity pikachu(PLAYER);
+Entity goal(COIN);
+
 bool ended = false;
+
+using namespace std;
 
 GLuint LoadTexture(const char* filePath) {
     int w, h, n;
@@ -99,7 +103,8 @@ void DrawText(ShaderProgram* program, GLuint fontTextureID, std::string text, fl
     glDisableVertexAttribArray(program->texCoordAttribute);
 }
 
-int platformCount = 0;
+int borderTileCount = -1;
+
 //borders
 float bottomBorder;
 float leftBorder;
@@ -117,7 +122,6 @@ void Initialize() {
 
     glViewport(0, 0, 640, 480);
 
-    //plain.Load("shaders/vertex_textured.glsl", "shaders/fragment_textured.glsl");
 
     viewMatrix = glm::mat4(1.0f);
     //modelMatrix = glm::mat4(1.0f); //modelMatrix is used elegantly in Entity.cpp
@@ -135,29 +139,72 @@ void Initialize() {
     textured.Load("shaders/vertex_textured.glsl", "shaders/fragment_textured.glsl");
     textID = LoadTexture("font1.png");
     tileID = LoadTexture("tile.png");
+    pikachu.textureID = LoadTexture("pikachu.png");
+    goal.textureID = LoadTexture("pokeball.png");
 
+    goal.position = glm::vec3(2.0f, -2.0f, 0.0);
 
-    //bottomBorder border
+    pikachu.position = glm::vec3(0, 4, 0);
+    pikachu.acceleration = glm::vec3(0, -0.1, 0); 
+    pikachu.width = 0.5;
+    pikachu.height = 0.5;
+    //as much as we would like to use -9.81 its too much movement in a short time for this game
+    
+    for (bottomBorder = -5; bottomBorder < 6; bottomBorder++) {
+        borderTileCount++;
 
-    for (bottomBorder = -5; bottomBorder <= 5; bottomBorder++) {
-        platforms[platformCount].textureID = tileID;
-        platforms[platformCount].position = glm::vec3(bottomBorder, -3.25f, 0);
-        platformCount++;
+        tiles[borderTileCount].textureID = tileID;
+        tiles[borderTileCount].position = glm::vec3(bottomBorder, -3.2f, 0);
+        tiles[borderTileCount].entityType = TILE;
+    }
+    cout << borderTileCount << endl; //debugging
+
+    for (leftBorder = -2.2; leftBorder < 3.2; leftBorder++) {
+        borderTileCount++;
+
+        tiles[borderTileCount].textureID = tileID;
+        tiles[borderTileCount].position = glm::vec3(-4.5, leftBorder, 0);
+        tiles[borderTileCount].entityType = TILE;
+    }
+    cout << borderTileCount << endl; //debugging
+
+    for (rightBorder = -2.2; rightBorder < 3.2; rightBorder++) {
+        borderTileCount++;
+
+        tiles[borderTileCount].textureID = tileID;
+        tiles[borderTileCount].position = glm::vec3(4.5, rightBorder, 0);
+        tiles[borderTileCount].entityType = TILE;
+    }
+    cout << borderTileCount << endl; //debugging
+
+    tiles[23].textureID = tileID;
+    tiles[23].position = glm::vec3(-3.5, 1.8, 0);
+    tiles[23].entityType = TILE;
+
+    tiles[24].textureID = tileID;
+    tiles[24].position = glm::vec3(-1.2, 1.8, 0);
+    tiles[24].entityType = TILE;
+
+    tiles[25].textureID = tileID;
+    tiles[25].position = glm::vec3(-0.2, 1.8, 0);
+    tiles[25].entityType = TILE;
+
+    tiles[26].textureID = tileID;
+    tiles[26].position = glm::vec3(2.4, 1.8, 0);
+    tiles[26].entityType = TILE;
+
+    int moreTiles = 26;
+    for (int firstBarrierX = 4; firstBarrierX >= -1; firstBarrierX--) {
+        moreTiles++;
+
+        tiles[moreTiles].textureID = tileID;
+        tiles[moreTiles].position = glm::vec3(firstBarrierX, -0.2, 0);
+        tiles[moreTiles].entityType = TILE;
     }
 
-    //left border
-    for (leftBorder = -2.25; leftBorder <= 3.75; leftBorder++) {
-        platforms[platformCount].textureID = tileID;
-        platforms[platformCount].position = glm::vec3(-5, leftBorder, 0);
-        platformCount++;
-    }
+    cout << moreTiles << endl; //debugging
 
-    //right border
-    for (rightBorder = -2.25; rightBorder <= 3.75; rightBorder++) {
-        platforms[platformCount].textureID = tileID;
-        platforms[platformCount].position = glm::vec3(5, rightBorder, 0);
-        platformCount++;
-    }
+    tiles[33] = goal;
 
     textured.SetProjectionMatrix(projectionMatrix);
     textured.SetViewMatrix(viewMatrix);
@@ -177,6 +224,7 @@ float lastTicks = 0;
 float accumulator = 0.0f;
 
 void Update() {
+
     float ticks = (float)SDL_GetTicks() / 1000.0f;
     float deltaTime = ticks - lastTicks;
     lastTicks = ticks;
@@ -189,22 +237,41 @@ void Update() {
 
     while (deltaTime >= FIXED_TIMESTEP) {
         // Update. Notice it's FIXED_TIMESTEP. Not deltaTime
-        lander.Update(FIXED_TIMESTEP, platforms, PLATFORM_COUNT);
+
+        if (!pikachu.collisionDetected && !pikachu.winnerWinnerChickenDinner)
+            pikachu.Update(FIXED_TIMESTEP, tiles, TILE_COUNT);
 
         deltaTime -= FIXED_TIMESTEP;
     }
 
-    accumulator = deltaTime;
-
+    accumulator = deltaTime;    
 }
-glm::vec3 tileSizing = glm::vec3(1.0f, 1.0f, 1.0f);
+
+
+glm::vec3 tileSizing = glm::vec3(1.0f, 1.0f, 0.0f);
+glm::vec3 pokeballSizing = glm::vec3(1.0f, 1.0f, 0.0f); 
+glm::vec3 pikSizing = glm::vec3(0.5f, 0.5f, 0.0f);
 
 void Render() {
     glClear(GL_COLOR_BUFFER_BIT);
-    for (int i = 0; i < platformCount; i++) {
-        platforms[i].Render(&textured, tileSizing);
-    }
+    
+    pikachu.Render(&textured, pikSizing);
+    goal.Render(&textured, pokeballSizing);
 
+    for (int i = 0; i <= 33; i++) {
+        tiles[i].Render(&textured, tileSizing);
+    }
+    if (pikachu.collisionDetected) {
+        if (pikachu.winnerWinnerChickenDinner) {
+            DrawText(&textured, textID, "Mission Successful!", 0.75, -0.5, glm::vec3(-1.5, 0, 0));
+            //gameIsRunning = false; //commented out because if not, it immediatly goes to quit function so you can't see end screen.
+
+        }
+        else {
+            DrawText(&textured, textID, "Mission Failed!", 0.75, -0.5, glm::vec3(-1.0, 0, 0));
+            //gameIsRunning = false;
+        }
+    }
     SDL_GL_SwapWindow(displayWindow);
 }
 
@@ -216,20 +283,36 @@ void ProcessInput() {
         case SDL_WINDOWEVENT_CLOSE:
             gameIsRunning = false;
             break;
-
-        case SDL_KEYDOWN:
+        }
+        if (!pikachu.boostUsed) {
             switch (event.key.keysym.sym) {
-            case SDLK_SPACE:
-                // Some sort of action
-                break;
+            case SDLK_RIGHT:
+                pikachu.acceleration.x = 3.0;
+                pikachu.boostUsed = true;
 
+                break;
+            case SDLK_LEFT:
+                pikachu.acceleration.x = -3.0;
+                pikachu.boostUsed = true;
+
+                break;
             }
-            break;
+
         }
     }
-
+    
     // Check for pressed/held keys below
     const Uint8* keys = SDL_GetKeyboardState(NULL);
+
+    if (keys[SDL_SCANCODE_A])
+    {
+        pikachu.acceleration.x = -0.5f;
+    }
+    else if (keys[SDL_SCANCODE_D])
+    {
+        pikachu.acceleration.x = 0.5f;
+    }
+    //if (pikachu.boost) {}
 }
 
 void Shutdown() {
@@ -243,7 +326,7 @@ int main(int argc, char* argv[]) {
         ProcessInput();
         Update();
         Render();
-    }
+        }
     
     Shutdown();
     return 0;
