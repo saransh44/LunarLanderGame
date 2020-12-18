@@ -145,10 +145,10 @@ void Initialize() {
     goal.position = glm::vec3(2.0f, -2.0f, 0.0);
 
     pikachu.position = glm::vec3(0, 4, 0);
-    pikachu.acceleration = glm::vec3(0, -0.1, 0); 
+    pikachu.acceleration = glm::vec3(0, -0.1, 0);
+    //as much as we would like to use -9.81 its too much movement in a short scale for this game
     pikachu.width = 0.5;
     pikachu.height = 0.5;
-    //as much as we would like to use -9.81 its too much movement in a short time for this game
     
     for (bottomBorder = -5; bottomBorder < 6; bottomBorder++) {
         borderTileCount++;
